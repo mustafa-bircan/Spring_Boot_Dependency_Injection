@@ -55,35 +55,27 @@ public class DeveloperController {
     public String addDeveloper(@RequestBody Developer developer) {
         double netSalary = calculateNetSalary(developer);
 
-        if (developer.getExperience() == Experience.JUNIOR) {
-            developers.put(developer.getId(),
-                    new JuniorDeveloper(developer.getId(), developer.getName(), netSalary));
-        } else if (developer.getExperience() == Experience.MID) {
-            developers.put(developer.getId(),
-                    new MidDeveloper(developer.getId(), developer.getName(), netSalary));
-        } else if (developer.getExperience() == Experience.SENIOR) {
-            developers.put(developer.getId(),
-                    new SeniorDeveloper(developer.getId(), developer.getName(), netSalary));
-        }
+        Developer newDev = switch (developer.getExperience()) {
+            case JUNIOR -> new JuniorDeveloper(developer.getId(), developer.getName(), netSalary);
+            case MID -> new MidDeveloper(developer.getId(), developer.getName(), netSalary);
+            case SENIOR -> new SeniorDeveloper(developer.getId(), developer.getName(), netSalary);
+        };
+
+        developers.put(newDev.getId(), newDev);
+
         return "Developer added successfully!";
     }
 
-
     private double calculateNetSalary(Developer developer) {
-        double taxRate = 0;
-        switch(developer.getExperience()) {
-            case JUNIOR:
-                taxRate = taxable.getSimpleTaxRate();
-                break;
-            case MID:
-                taxRate = taxable.getMiddleTaxRate();
-                break;
-            case SENIOR:
-                taxRate = taxable.getUpperTaxRate();
-                break;
-        }
+        double taxRate = switch (developer.getExperience()) {
+            case JUNIOR -> taxable.getSimpleTaxRate();
+            case MID -> taxable.getMiddleTaxRate();
+            case SENIOR -> taxable.getUpperTaxRate();
+        };
         return developer.getSalary() - (developer.getSalary() * taxRate / 100);
     }
+
+
 
     @PutMapping("/{id}")
     public String updateDeveloper(@PathVariable int id, @RequestBody Developer developer) {
