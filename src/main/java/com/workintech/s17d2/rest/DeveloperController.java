@@ -27,9 +27,13 @@ public class DeveloperController {
 
     @PostConstruct
     public void init() {
-        developers.put(1, new Developer(1, "Ali", 5000, Experience.JUNIOR));
-        developers.put(2, new Developer(2, "Ayşe", 8000, Experience.MID));
-        developers.put(3, new Developer(3, "Mehmet", 12000, Experience.SENIOR));
+        double juniorNetSalary = 5000 - (5000 * taxable.getSimpleTaxRate() / 100);
+        double midNetSalary = 8000 - (8000 * taxable.getMiddleTaxRate() / 100);
+        double seniorNetSalary = 12000 - (12000 * taxable.getUpperTaxRate() / 100);
+
+        developers.put(1, new JuniorDeveloper(1, "Ali", juniorNetSalary));
+        developers.put(2, new MidDeveloper(2, "Ayşe", midNetSalary));
+        developers.put(3, new SeniorDeveloper(3, "Mehmet", seniorNetSalary));
     }
 
     @GetMapping
@@ -49,14 +53,36 @@ public class DeveloperController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public String addDeveloper(@RequestBody Developer developer) {
+        double netSalary = calculateNetSalary(developer);
+
         if (developer.getExperience() == Experience.JUNIOR) {
-            developers.put(developer.getId(), new JuniorDeveloper(developer.getId(), developer.getName(), developer.getSalary()));
+            developers.put(developer.getId(),
+                    new JuniorDeveloper(developer.getId(), developer.getName(), netSalary));
         } else if (developer.getExperience() == Experience.MID) {
-            developers.put(developer.getId(), new MidDeveloper(developer.getId(), developer.getName(), developer.getSalary()));
+            developers.put(developer.getId(),
+                    new MidDeveloper(developer.getId(), developer.getName(), netSalary));
         } else if (developer.getExperience() == Experience.SENIOR) {
-            developers.put(developer.getId(), new SeniorDeveloper(developer.getId(), developer.getName(), developer.getSalary()));
+            developers.put(developer.getId(),
+                    new SeniorDeveloper(developer.getId(), developer.getName(), netSalary));
         }
         return "Developer added successfully!";
+    }
+
+
+    private double calculateNetSalary(Developer developer) {
+        double taxRate = 0;
+        switch(developer.getExperience()) {
+            case JUNIOR:
+                taxRate = taxable.getSimpleTaxRate();
+                break;
+            case MID:
+                taxRate = taxable.getMiddleTaxRate();
+                break;
+            case SENIOR:
+                taxRate = taxable.getUpperTaxRate();
+                break;
+        }
+        return developer.getSalary() - (developer.getSalary() * taxRate / 100);
     }
 
     @PutMapping("/{id}")
